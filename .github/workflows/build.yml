@@ -1,0 +1,42 @@
+name: Build MobileDumper iOS dylib
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Ensure submodules initialized
+        run: git submodule update --init --recursive
+
+      - name: Install Ninja and CMake
+        run: |
+          brew install ninja cmake
+          cmake --version
+          ninja --version
+
+      - name: Build iOS dylib
+        run: |
+          chmod +x build.sh
+          ./build.sh --platform ios --target dylib --build release
+
+      - name: Find dylib
+        run: |
+          echo "=== Searching for .dylib ==="
+          find . -name "*.dylib" -not -path "./.git/*" -exec ls -la {} \;
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobileDumper-iOS-dylib
+          path: |
+            **/*.dylib
+            **/*.framework/**
+          if-no-files-found: warn
